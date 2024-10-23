@@ -1,45 +1,35 @@
-import smtplib
-from email.mime.text import MIMEText
+from flask import Flask, request, jsonify, render_template
+import json
 
-def send_email(order_id, payer_email):
-    # Email content
-    body = f"Guest Checkout Payment Completed\nOrder ID: {order_id}\nPayer Email: {payer_email}"
-    msg = MIMEText(body)
-    msg['Subject'] = 'New PayPal Payment'
-    msg['From'] = 'emkae0001@gmail.com'
-    msg['To'] = 'jtsie98@gmail.com'
+app = Flask(__name__)
 
-    # SMTP server configuration
-    smtp_server = 'smtp.gmail.com'
-    smtp_port = 587
-    smtp_user = 'emkae0001@gmail.com'  # Your Gmail address
-    smtp_password = 'zero17016175'  # Your Gmail password or app-specific password
+# In-memory storage for received webhook events
+webhook_events = []
 
-    # Send the email
-    try:
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.sendmail(smtp_user, ['jtsie98@gmail.com'], msg.as_string())
-        server.quit()
-        print('Email sent successfully.')
-    except Exception as e:
-        print(f"Failed to send email: {e}")
-
-# Call send_email() inside the webhook handler after processing the payment
+# Endpoint for PayPal Webhook
 @app.route('/paypal-webhook', methods=['POST'])
 def paypal_webhook():
     webhook_event = request.get_json()
+
+    # Log the received event for debugging
     print(f"Received webhook event: {json.dumps(webhook_event, indent=4)}")
 
+    # Store the event in memory (you can save this in a database if needed)
+    webhook_events.append(webhook_event)
+
+    # Optionally handle specific events like 'CHECKOUT.ORDER.COMPLETED'
     if webhook_event['event_type'] == 'CHECKOUT.ORDER.COMPLETED':
         order_id = webhook_event['resource']['id']
         payer_email = webhook_event['resource']['payer']['email_address']
-        print(f"Guest Checkout Payment Completed: Order ID {order_id}, Payer Email {payer_email}")
+        print(f"Order Completed: {order_id}, Payer Email: {payer_email}")
 
-        # Send email with the order details
-        send_email(order_id, payer_email)
+    return jsonify({'status': 'success'}), 200
 
-    # return jsonify({'status': 'success'}), 200
-    send_email(webhook_event, payer_email)
-    return jsonify(webhook_event)
+# Route to display stored webhook events
+@app.route('/webhook-events', methods=['GET'])
+def display_webhook_events():
+    # Render the webhook events as a simple HTML page
+    return render_template('events.html', events=webhook_events)
+
+if __name__ == '__main__':
+    app.run(debug=True)
