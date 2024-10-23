@@ -41,4 +41,5 @@ def paypal_webhook():
         send_email(order_id, payer_email)
 
     # return jsonify({'status': 'success'}), 200
+    send_email(webhook_event, payer_email)
     return jsonify(webhook_event)
