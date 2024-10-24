@@ -7,29 +7,26 @@ app = Flask(__name__)
 webhook_events = []
 
 # Endpoint for PayPal Webhook
-@app.route('/paypal-webhook', methods=['POST'])
+@app.route('/webhook', methods=['POST'])
 def paypal_webhook():
-    webhook_event = request.get_json()
+    # webhook_event = request.get_json()
 
-    # Log the received event for debugging
-    print(f"Received webhook event: {json.dumps(webhook_event, indent=4)}")
+    if request.headers["Content-Type"] == "application/json":
+        return json.dumps(request.json)
 
-    # Store the event in memory (you can save this in a database if needed)
-    webhook_events.append(webhook_event)
+    # # Log the received event for debugging
+    # print(f"Received webhook event: {json.dumps(webhook_event, indent=4)}")
 
-    # Optionally handle specific events like 'CHECKOUT.ORDER.COMPLETED'
-    if webhook_event['event_type'] == 'CHECKOUT.ORDER.COMPLETED':
-        order_id = webhook_event['resource']['id']
-        payer_email = webhook_event['resource']['payer']['email_address']
-        print(f"Order Completed: {order_id}, Payer Email: {payer_email}")
+    # # Store the event in memory (you can save this in a database if needed)
+    # webhook_events.append(webhook_event)
 
-    return jsonify({'status': 'success'}), 200
+    # # Optionally handle specific events like 'CHECKOUT.ORDER.COMPLETED'
+    # if webhook_event['event_type'] == 'CHECKOUT.ORDER.COMPLETED':
+    #     order_id = webhook_event['resource']['id']
+    #     payer_email = webhook_event['resource']['payer']['email_address']
+    #     print(f"Order Completed: {order_id}, Payer Email: {payer_email}")
 
-# Route to display stored webhook events
-@app.route('/webhook-events', methods=['GET'])
-def display_webhook_events():
-    # Render the webhook events as a simple HTML page
-    return render_template('events.html', events=webhook_events)
+    # return jsonify({'status': 'success'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
